@@ -5,6 +5,10 @@
 #include <stdbool.h>
 #include <getopt.h>
 
+#include "iff2raw.h"
+#include "byte_order.h"
+#include "iff_loader.h"
+
 char *input_filename;
 char *output_filename;
 int color_mode = 4;
@@ -70,7 +74,7 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-    // TODO: 
+
 
 
     return 0;
