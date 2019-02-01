@@ -9,11 +9,17 @@ CFLAGS  = -g -Wall
 # the build target executable:
 TARGET = iff2raw
 
+# define the C source files
+SRCS = iff2raw.c byte_order.c iff_loader.c rle_decompress.c
+
+OBJS = $(SRCS:.c=.o)
+
 all: $(TARGET)
 
-$(TARGET): $(TARGET).c
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
 
+.PHONY: clean
 clean:
-	$(RM) $(TARGET)
+	$(RM) $(TARGET) *.o
 	

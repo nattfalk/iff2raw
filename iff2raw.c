@@ -74,7 +74,7 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-
+    iff_loadimage(input_filename);
 
 
     return 0;

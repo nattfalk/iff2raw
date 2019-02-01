@@ -10,4 +10,6 @@ unsigned short read_word(FILE* fp);
 UBYTE read_byte(FILE* fp);
 char* read_chunk_id(FILE* fp);
 
+void iff_loadimage(char *filename);
+
 #endif
