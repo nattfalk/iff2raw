@@ -1,10 +1,15 @@
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
+#include "iff2raw.h"
 #include "iff_loader.h"
 #include "byte_order.h"
 #include "rle_decompress.h"
+#include "iff_image.h"
 
 ULONG read_dword(FILE* fp)
 {
@@ -38,32 +43,37 @@ char* read_chunk_id(FILE* fp)
     return strdup(chunk_id);
 }
 
-void iff_loadimage(char *filename)
+int iff_loadimage(_options *opts, iff_image_data* image_data)
 {
 	ULONG _dump;
 
 	char *chunk_id;
-	unsigned short width;
-	unsigned short height;
-	UBYTE bpls;
 	UBYTE compression;
 
 	UBYTE *body_data = NULL;
 
-	FILE *fp = fopen(filename, "rb");
-	if (!fp)
-		return;
+	if (opts->verbose_mode)
+		fprintf(stderr, "IFF loader\n");
 
-	// fseek(fp, 0L, SEEK_END);
-	// long filesize = ftell(fp);
-	// rewind(fp);
+	if (!opts->input_filename)
+	{
+		fprintf(stderr, "No input filename specified\n");
+		return S_ERR;
+	}	
+
+	FILE *fp = fopen(opts->input_filename, "rb");
+	if (!fp)
+	{
+		fprintf(stderr, "Could not open input file %s\n", opts->input_filename);
+		return S_ERR;
+	}
 
 	chunk_id = read_chunk_id(fp);
 	if (strncmp("FORM", chunk_id, 4) != 0)
 	{
 		fprintf(stderr, "FORM chunk not found!\n");
 		fclose(fp);
-		return;
+		return S_ERR;
 	}
 	ULONG chunk_size = read_dword(fp);
 
@@ -75,63 +85,78 @@ void iff_loadimage(char *filename)
 
 		if (strncmp("ILBM", chunk_id, 4) == 0)
 		{
-			fprintf(stderr, "Found ILBM chunk\n");
+			if (opts->verbose_mode)
+				fprintf(stderr, "Found ILBM chunk\n");
 		}
 		else if (strncmp("BMHD", chunk_id, 4) == 0)
 		{
-			fprintf(stderr, "Found BMHD chunk\n");
+			if (opts->verbose_mode)
+				fprintf(stderr, "Found BMHD chunk\n");
 			chunk_size = read_dword(fp);
 
-			width = read_word(fp);
-			height = read_word(fp);
+			image_data->width = read_word(fp);
+			image_data->height = read_word(fp);
 			_dump = read_word(fp);
 			_dump = read_word(fp);
-			bpls = read_byte(fp);
+			image_data->bitplanes = read_byte(fp);
+			if (image_data->bitplanes > 8)
+				image_data->bitplanes = 8;
 			_dump = read_byte(fp);
 			compression = read_byte(fp);
-			fprintf(stderr, "image size %ix%ix%i\n", width, height, bpls);
-			fprintf(stderr, "Compression = %i\n", compression);
+
+			if (opts->verbose_mode)
+			{
+				fprintf(stderr, " - Image size: %ix%i\n", image_data->width, image_data->height);
+				fprintf(stderr, " - Number of bitplanes: %i\n", image_data->bitplanes);
+			}
 
 			fseek(fp, chunk_size-11, SEEK_CUR);
 		}
 		else if (strncmp("CMAP", chunk_id, 4) == 0)
 		{
-			fprintf(stderr, "Found CMAP chunk\n");
+			if (opts->verbose_mode)
+				fprintf(stderr, "Found CMAP chunk\n");
 			chunk_size = read_dword(fp);
 
-			fprintf(stderr, "CMAP chunk size %ld\n", chunk_size);
+			if (opts->verbose_mode)
+				fprintf(stderr, " - Number of colors: %ld\n", chunk_size / 3);
 
-			fseek(fp, chunk_size, SEEK_CUR);
+			image_data->palette = malloc(chunk_size);
+			fread((void*)image_data->palette, chunk_size, 1, fp);
 		}
 		else if (strncmp("BODY", chunk_id, 4) == 0)
 		{
-			fprintf(stderr, "Found BODY chunk\n");
+			if (opts->verbose_mode)
+				fprintf(stderr, "Found BODY chunk\n");
 			chunk_size = read_dword(fp);
-
-			fprintf(stderr, "BODY chunk size %ld\n", chunk_size);
 
 			if (compression == 0)
 			{
+				if (opts->verbose_mode)
+					fprintf(stderr, " - Image data not compressed\n");
 				body_data = (UBYTE*)calloc(1, chunk_size);
 				fread((void*)body_data, chunk_size, 1, fp);
 			}
 			else
 			{
+				if (opts->verbose_mode)
+					fprintf(stderr, " - Image data compressed\n");
 				UBYTE *compressedData = (UBYTE*)calloc(1, chunk_size);
+				fread((void*)compressedData, chunk_size, 1, fp);
 				
-				int uncompressedSize = (width>>3)*height*bpls;
+				int uncompressedSize = (image_data->width>>3)*image_data->height*image_data->bitplanes;
 				UBYTE *uncompressedData = (UBYTE*)calloc(1, uncompressedSize);
-				rel_decompress(compressedData, uncompressedData, uncompressedSize);
+				rel_decompress(compressedData, uncompressedData, chunk_size);
+
 				free((void*)compressedData);
 
 				body_data = uncompressedData;
 			}
 			
-			// TODO: 
-
-			free((void*)body_data);
+			image_data->data = body_data;
 		}
 	}
-
 	fclose(fp);
+
+	return S_OK;
 }

@@ -1,8 +1,10 @@
+#include <stdio.h>
+
 #include "iff2raw.h"
 #include "rle_decompress.h"
 
 void rel_decompress(UBYTE* input, UBYTE* output, ULONG inputSize) {
-	UBYTE marker, symbol;
+	UBYTE value;
 	ULONG i, inputPosition, outputPosition, count;
 
 	if (inputSize < 1)
@@ -11,42 +13,29 @@ void rel_decompress(UBYTE* input, UBYTE* output, ULONG inputSize) {
 	}
 
 	inputPosition = 0;
-	marker = input[inputPosition++];
 	outputPosition = 0;
 
 	do
 	{
-		symbol = input[inputPosition++];
+		count = input[inputPosition++];
+		if (count == 0x80)
+			break;
 
-		if (symbol == marker)
+		if (count & 0x80) 
 		{
-			count = input[inputPosition++];
-
-			if (count <= 2)
+			value = input[inputPosition++];
+			count = 257 - count;
+			for(i = 0; i < count; i++)
 			{
-				for (i = 0; i <= count; ++i)
-				{
-					output[outputPosition++] = marker;
-				}
-			}
-			else
-			{
-				if (count & 0x80)
-				{
-					count = ((count & 0x7f) << 8) + input[inputPosition++];
-				}
-
-				symbol = input[inputPosition++];
-
-				for (i = 0; i <= count; ++i)
-				{
-					output[outputPosition++] = symbol;
-				}
+				output[outputPosition++] = value;
 			}
 		}
 		else
 		{
-			output[outputPosition++] = symbol;
+			for(i = 0; i < count+1; i++)
+			{
+				output[outputPosition++] = input[inputPosition++];
+			}
 		}
 	} while (inputPosition < inputSize);
 }

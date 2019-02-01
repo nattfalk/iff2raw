@@ -8,11 +8,10 @@
 #include "iff2raw.h"
 #include "byte_order.h"
 #include "iff_loader.h"
+#include "iff_image.h"
+#include "raw_writer.h"
 
-char *input_filename;
-char *output_filename;
-int color_mode = 4;
-int palette_mode = 0;
+_options opts;
 
 void print_usage()
 {
@@ -22,6 +21,8 @@ void print_usage()
     fprintf(stderr, "  -o <filename>    Output filename without extension\n");
     fprintf(stderr, "  -c <mode>        Color mode. 4=4 bits per channel (default), 8=8 bits per channel\n");
     fprintf(stderr, "  -p <mode>        Palette output mode. 0=binary (default), 1=asm-source\n");
+    fprintf(stderr, "  -r <mode>        Row output mode. 0=normal (default), 1=interleaved\n");
+    fprintf(stderr, "  -v               Verbose mode");
     fprintf(stderr, "\n");
     fprintf(stderr, "  -h               Print this message and exit\n");
     fprintf(stderr, "\n");
@@ -37,23 +38,31 @@ static bool collect_arguments(int argc, char **argv)
         return false;
     }
 
-    while ((ch = getopt(argc, argv, "c:h:i:o:p:")) != -1) 
+    while ((ch = getopt(argc, argv, "c:h:i:o:p:r:v")) != -1) 
     {
         switch (ch) {
             case 'i':
-                input_filename = strdup(optarg);
+                opts.input_filename = strdup(optarg);
                 break;
 
             case 'o':
-                output_filename = strdup(optarg);
+                opts.output_filename = strdup(optarg);
                 break;
 
             case 'c':
-                color_mode = atoi(optarg);
+                opts.color_mode = atoi(optarg);
                 break;
 
             case 'p':
-                palette_mode = atoi(optarg);
+                opts.palette_mode = atoi(optarg);
+                break;
+
+            case 'r':
+                opts.row_mode = atoi(optarg);
+                break;
+
+            case 'v':
+                opts.verbose_mode = true;
                 break;
 
             case 'h':
@@ -74,8 +83,16 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-    iff_loadimage(input_filename);
+    iff_image_data image;
+    if(iff_loadimage(&opts, &image))
+    {
+        raw_writeimage(&opts, &image);
+    }
 
+    if (image.data)
+        free(image.data);
+    if (image.palette)
+        free(image.palette);
 
     return 0;
 }

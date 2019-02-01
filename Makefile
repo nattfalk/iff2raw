@@ -10,7 +10,7 @@ CFLAGS  = -g -Wall
 TARGET = iff2raw
 
 # define the C source files
-SRCS = iff2raw.c byte_order.c iff_loader.c rle_decompress.c
+SRCS = iff2raw.c byte_order.c iff_loader.c rle_decompress.c raw_writer.c
 
 OBJS = $(SRCS:.c=.o)
 
@@ -21,5 +21,5 @@ $(TARGET): $(OBJS)
 
 .PHONY: clean
 clean:
-	$(RM) $(TARGET) *.o
+	$(RM) $(TARGET) *.o *.raw *.pal *.s
 	

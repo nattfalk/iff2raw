@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef _INC_RLE_DECOMPRESS_
 #define _INC_RLE_DECOMPRESS_
 
