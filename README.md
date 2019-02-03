@@ -32,7 +32,7 @@ Output filename (without extension)
 Color mode during save. 4 (default) = 4 bits per channel, 8 = 8 bits per channel
 
 `-p <mode>`
-Palette mode during save. 0 (default) = binary, 1 = sourcecode/asm 
+Palette mode during save. 0 (default) = binary, 1 = sourcecode/asm (MC68x0 asm) 
 
 `-r <mode>`
 Scanline mode during save. 0 (default) = Non-interleaved, 1 = Interleaved
