@@ -112,7 +112,7 @@ void raw_writeimage(_options *opts, iff_image_data *image_data)
             return;
         }
 
-        int j = pow(2, (int)image_data->bitplanes);
+        int j = 1 << (int)image_data->bitplanes;
         for (i=0; i<j; i++)
         {
             r = get_color(*(image_data->palette+(i*3)), opts->color_mode);
@@ -149,7 +149,7 @@ void raw_writeimage(_options *opts, iff_image_data *image_data)
             return;
         }
 
-        int j = pow(2, (int)image_data->bitplanes);
+        int j = 1 << (int)image_data->bitplanes;
         if (opts->color_mode == 4)
             fprintf(fp, "      ;0rgb\n");    
         else
