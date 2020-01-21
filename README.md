@@ -1,5 +1,7 @@
 # iff2raw converter
 
+![](https://github.com/nattfalk/iff2raw/workflows/Build/badge.svg)
+
 A commandline tool for converting IFF images to RAW + palette file.
 
 ## Building
